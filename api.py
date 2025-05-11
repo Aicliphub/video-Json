@@ -79,15 +79,34 @@ async def get_status(job_id: str):
     """Check status of a generation job"""
     with jobs_lock:
         if job_id not in jobs:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Job not found"
-            )
+            return {
+                "status": "not_found",
+                "job_id": job_id,
+                "error": "Job not found"
+            }
         
+        job = jobs[job_id]
         return {
+            "status": job["status"],
             "job_id": job_id,
-            "status": jobs[job_id]["status"]
+            "input_prompt": job.get("input_prompt"),
+            "result": job.get("result"),
+            "error": job.get("error")
         }
+
+@app.delete("/cleanup")
+async def cleanup_jobs(max_age_hours: int = 24):
+    """Clean up old completed/failed jobs"""
+    cutoff = time.time() - (max_age_hours * 3600)
+    with jobs_lock:
+        to_delete = [
+            job_id for job_id, job in jobs.items()
+            if job["status"] in ("completed", "failed") 
+            and job.get("end_time", 0) < cutoff
+        ]
+        for job_id in to_delete:
+            del jobs[job_id]
+        return {"cleaned": len(to_delete)}
 
 @app.get("/result/{job_id}")
 async def get_result(job_id: str):
