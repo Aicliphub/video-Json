@@ -1,0 +1,135 @@
+{
+  "metadata": {
+    "title": "Data science fundamentals",
+    "description": "",
+    "topic": "Data science fundamentals",
+    "created_at": "2025-05-11T05:48:13.638379",
+    "updated_at": "2025-05-11T05:54:37.228472",
+    "version": "1.0.0"
+  },
+  "audio": {
+    "url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/tts_output_20250511_054906_9exgog.wav",
+    "duration": 58.934875,
+    "all_urls": [
+      "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/tts_output_20250511_054906_9exgog.wav"
+    ],
+    "num_chunks": 1,
+    "source_word_count": 153
+  },
+  "script": {
+    "full_text": "Ever wondered how Netflix knows exactly what you want to watch next? Thats data science magic. In just 60 seconds, I will show you how data science works and why its changing everything.  \n\nData science is like being a detective but for numbers. You take raw data, clean it up, and find hidden patterns. Imagine predicting tomorrows weather or spotting fake reviews online. Thats data science in action.  \n\nIt all starts with three key steps. First, collect data from everywhere. Second, analyze it using tools like Python or R. Third, turn those numbers into decisions. Companies use this to recommend products, doctors use it to predict diseases, and even sports teams use it to pick players.  \n\nThe best part? You dont need to be a math genius. Just curiosity and the right tools. Ready to unlock the power of data? Start learning today and who knows, maybe youll build the next big AI.",
+    "word_count": 153
+  },
+  "segments": [
+    {
+      "id": 0,
+      "text": "Ever wondered how Netflix knows exactly what you want to watch next? That's data science magic. In just sixty seconds,",
+      "start_time": 0.0,
+      "end_time": 7.44,
+      "duration": 7.44,
+      "words": 20,
+      "image_prompt": "A futuristic, glowing Netflix interface floating in a dark room, with streams of data flowing like magic towards a silhouette of a person sitting on a couch, symbolizing personalized recommendations powered by data science. The scene is illuminated by the soft glow of the screen, creating a sense of wonder and intrigue.",
+      "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_1-hash-3ad87f4e9696057e4de5bd61a4eb45c8_20250511_055045.png",
+      "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-32c00a63-30a8-4db3-8337-98afebfc2f54.png"
+    },
+    {
+      "id": 1,
+      "text": "I will show you how data science works and why it's changing everything. Data science is like being a detective, but for numbers, you take raw data, clean it up, and find hidden patterns.",
+      "start_time": 7.52,
+      "end_time": 19.115,
+      "duration": 11.594999999999999,
+      "words": 34,
+      "image_prompt": "A detective's magnifying glass focusing on a spreadsheet filled with numbers, transforming into clean, organized data. Around it, shadowy figures of raw data are being swept away by a broom, symbolizing the cleaning process. The background is a chalkboard with equations and graphs, emphasizing the detective work in data science.",
+      "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_2-hash-bde272a91886bcbbcedc5e5c77d2bce5_20250511_055048.png",
+      "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-75ee41ba-63e3-43aa-ac15-9c8faad777b3.png"
+    },
+    {
+      "id": 2,
+      "text": "Imagine predicting tomorrow's weather or spotting fake reviews online.",
+      "start_time": 19.915,
+      "end_time": 24.314999,
+      "duration": 4.399999000000001,
+      "words": 9,
+      "image_prompt": "A split-screen image: one side shows a meteorologist pointing at a weather map with predicted sunny skies, and the other side reveals a computer screen highlighting a fake review being flagged by an algorithm. Both sides are connected by a flowing stream of binary code, representing the predictive power of data science.",
+      "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_3-hash-87052222211e3dbbfdd177bacf638fc9_20250511_055103.png",
+      "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-18dfeaf1-9448-4c84-8cc4-869f01d3a363.png"
+    },
+    {
+      "id": 3,
+      "text": "That's data science in action. It all starts with three key steps:",
+      "start_time": 24.555,
+      "end_time": 28.635,
+      "duration": 4.080000000000002,
+      "words": 12,
+      "image_prompt": "A large, glowing number '3' in the center, with three distinct paths branching out, each labeled with a step in the data science process. The background is a futuristic cityscape at night, symbolizing the vast potential and applications of data science.",
+      "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_4-hash-65c3e5950d25e4461698ca4532a00a0a_20250511_055044.png",
+      "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-635895e6-4cd1-4ff1-a8e2-cb0bef995b08.png"
+    },
+    {
+      "id": 4,
+      "text": "First, collect data from everywhere.",
+      "start_time": 29.17,
+      "end_time": 31.41,
+      "duration": 2.2399999999999984,
+      "words": 5,
+      "image_prompt": "A globe with streams of light representing data flowing from various points like social media icons, weather stations, and shopping carts into a central database. The scene is vibrant and dynamic, illustrating the collection of diverse data sources.",
+      "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_5-hash-fb2abf0cfc08343816814b0f86684ddb_20250511_055106.png",
+      "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-fcdc1603-9aa0-4806-9b56-7df4b07f21d3.png"
+    },
+    {
+      "id": 5,
+      "text": "Second, analyze it using tools like Python or R. Third, turn those numbers into decisions.",
+      "start_time": 31.73,
+      "end_time": 38.37,
+      "duration": 6.639999999999997,
+      "words": 15,
+      "image_prompt": "A close-up of a hand typing on a laptop with Python code on the screen, transitioning into a decision-making flowchart on the other half of the screen. The atmosphere is focused and professional, with a soft glow highlighting the tools and the transformation of data into decisions.",
+      "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_6-hash-116aefd7fed62c4fd132e85338001ad4_20250511_055058.png",
+      "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-4747b8c6-18e6-4551-9301-b95bc32c5b87.png"
+    },
+    {
+      "id": 6,
+      "text": "Indies use this to recommend products, doctors use it to predict diseases,",
+      "start_time": 39.17,
+      "end_time": 43.905,
+      "duration": 4.734999999999999,
+      "words": 12,
+      "image_prompt": "A collage of scenarios: an online store recommending products, a doctor analyzing a patient's data to predict health risks, and a sports coach reviewing player statistics. Each scenario is connected by glowing data streams, showcasing the wide-ranging impact of data science.",
+      "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_7-hash-12f4d13b8285951f9beb695f43a22212_20250511_055102.png",
+      "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-291ef29f-193d-4f5a-baa5-a19557154813.png"
+    },
+    {
+      "id": 7,
+      "text": "and even sports teams use it to pick players.",
+      "start_time": 44.065002,
+      "end_time": 46.945,
+      "duration": 2.8799980000000005,
+      "words": 9,
+      "image_prompt": "A sports stadium at night, with a spotlight on a coach holding a tablet displaying player stats, while in the background, players are highlighted based on their performance data. The scene is energetic and competitive, emphasizing data-driven decisions in sports.",
+      "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_8-hash-d2a18b528a6b131e0d1d58fbc1979145_20250511_055103.png",
+      "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-fb377a4d-db96-4e05-a369-ebc2b1d975fc.png"
+    },
+    {
+      "id": 8,
+      "text": "The best part, you don't need to be a math genius.",
+      "start_time": 47.105,
+      "end_time": 50.294876,
+      "duration": 3.1898760000000053,
+      "words": 11,
+      "image_prompt": "A diverse group of people gathered around a table, exploring data visualizations on a laptop, with expressions of curiosity and excitement. The room is warmly lit, creating an inviting and inclusive atmosphere that demystifies data science.",
+      "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_9-hash-fce65b7bece9033a96177895179a3140_20250511_055055.png",
+      "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-18e44d01-676e-4dc2-9023-5173a1c61d50.png"
+    },
+    {
+      "id": 9,
+      "text": "Just curiosity and the right tools, ready to unlock the power of data. Start learning today, and who knows? Maybe you'll build the next big AI.",
+      "start_time": 50.374874,
+      "end_time": 58.934875,
+      "duration": 8.560001,
+      "words": 26,
+      "image_prompt": "A person standing at the entrance of a path made of binary code, leading towards a futuristic city with AI and technology symbols. The sky is a gradient from dawn to daylight, symbolizing the beginning of a learning journey in data science with endless possibilities.",
+      "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_10-hash-7221bd2d217fb6e935b41d2f547e75b2_20250511_055058.png",
+      "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-186d745c-5195-46e1-b940-37f8704b2b79.png"
+    }
+  ]
+}

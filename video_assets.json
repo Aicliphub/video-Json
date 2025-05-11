@@ -1,0 +1,116 @@
+{
+  "json_path": "assets\\video_c0b64ed9-fe5d-487e-9d0e-6fefdc349af9.json",
+  "content": {
+    "metadata": {
+      "title": "A tutorial about Python programming",
+      "description": "",
+      "topic": "A tutorial about Python programming",
+      "created_at": "2025-05-11T05:22:34.401387",
+      "updated_at": "2025-05-11T05:25:10.829771",
+      "version": "1.0.0"
+    },
+    "audio": {
+      "url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/tts_output_20250511_052333_9o7er7.wav",
+      "duration": 53.215,
+      "all_urls": [
+        "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/tts_output_20250511_052333_9o7er7.wav"
+      ],
+      "num_chunks": 1,
+      "source_word_count": 140
+    },
+    "script": {
+      "full_text": "Want to learn Python but think it\u2019s too hard? Think again. Python is one of the easiest programming languages to start with, and I\u2019ll show you why in just 60 seconds.  \n\nFirst, Python reads like plain English. Instead of confusing symbols, you write simple commands like print hello world. That\u2019s it. No extra fluff.  \n\nSecond, Python does the heavy lifting for you. Need to sort a list? One line of code. Want to build a calculator? A few lines and you\u2019re done.  \n\nHere\u2019s a quick example. Open any Python editor and type print 5 plus 5. Run it. Boom. You just wrote your first program.  \n\nPython is powerful too. Big companies use it for AI, websites, and even space exploration.  \n\nReady to start? Search Python beginner tutorial and code your first project today. The best time to learn is now.",
+      "word_count": 140
+    },
+    "segments": [
+      {
+        "id": 0,
+        "text": "Want to learn Python but think it's too hard? Think again. Python is one of the easiest programming languages to start with, and I'll show you why in just sixty seconds. First, Python reads like plain English. Instead of confusing symbols, you write simple commands like print hello world. That's it. No extra fluff.",
+        "start_time": 0.0,
+        "end_time": 20.065,
+        "duration": 20.065,
+        "words": 54,
+        "image_prompt": "A clean, modern educational video scene showing a computer screen with a simple Python code example: 'print(\"hello world\")' displayed in a friendly, easy-to-read font. The background is a soft, neutral color to keep focus on the code. The scene is well-lit with natural light, emphasizing clarity and simplicity.",
+        "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_1-hash-f5c286dcdf53eaf0d1783506264f5072_20250511_052434.png",
+        "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-df25bb09-79ad-4cd0-be3c-99090959fecb.png"
+      },
+      {
+        "id": 1,
+        "text": "Second, Python does the heavy lifting for you. Need to sort a list, one line of code, want to build a calculator, a few lines and you're done. Here's a quick example. Open any Python editor and type print five plus five. Run it. Boom.",
+        "start_time": 20.705,
+        "end_time": 35.699997,
+        "duration": 14.994997000000005,
+        "words": 45,
+        "image_prompt": "A dynamic, engaging shot of a Python editor on a computer screen, showcasing a single line of code: 'print(5 + 5)'. The 'Run' button is highlighted, and the output '10' is displayed prominently below. The setting is bright and inviting, with a focus on the simplicity and power of Python.",
+        "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_2-hash-b7eb3de5f90cba80be81167d6c0582e9_20250511_052429.png",
+        "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-096da224-caf9-429d-8f96-8fb205aef8ea.png"
+      },
+      {
+        "id": 2,
+        "text": "You just wrote your first program.",
+        "start_time": 35.86,
+        "end_time": 37.78,
+        "duration": 1.9200000000000017,
+        "words": 6,
+        "image_prompt": "A celebratory scene with a close-up of the computer screen showing the successful execution of the Python code 'print(5 + 5)' with the output '10'. Confetti or a subtle animation effect emphasizes the achievement, creating a sense of accomplishment. The lighting is warm and encouraging.",
+        "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_3-hash-97e21b4659f8264d6e30b8f877f42d5d_20250511_052433.png",
+        "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-e07f7a84-75e5-4e78-b69d-623054dad09c.png"
+      },
+      {
+        "id": 3,
+        "text": "Python is powerful too.",
+        "start_time": 38.5,
+        "end_time": 39.86,
+        "duration": 1.3599999999999994,
+        "words": 4,
+        "image_prompt": "An expansive, awe-inspiring scene illustrating the power of Python with a split-screen effect. One side shows a complex AI algorithm running, and the other side displays a rocket launch, symbolizing space exploration. The imagery is futuristic and vibrant, highlighting Python's versatility.",
+        "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_4-hash-4a6332c4a587c109e64fd1a4fc020b8d_20250511_052426.png",
+        "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-bde56ab2-0754-4e76-b5ae-c9f64a672f0c.png"
+      },
+      {
+        "id": 4,
+        "text": "Big companies use it for AI websites and even space exploration.",
+        "start_time": 40.975002,
+        "end_time": 45.535,
+        "duration": 4.559997999999993,
+        "words": 11,
+        "image_prompt": "A collage-style image featuring logos of big tech companies using Python, alongside icons representing AI, websites, and space exploration. The composition is sleek and professional, with a dark theme and neon accents to convey innovation and cutting-edge technology.",
+        "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_5-hash-a479c46232e5a1074f8f43f9ccd4a989_20250511_052432.png",
+        "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-caec184b-b8a9-4f33-90c6-74070ef468b9.png"
+      },
+      {
+        "id": 5,
+        "text": "Ready to start? Search Python beginner tutorial",
+        "start_time": 45.695,
+        "end_time": 49.135002,
+        "duration": 3.440002,
+        "words": 7,
+        "image_prompt": "A motivational scene showing a laptop with a search bar open, typing 'Python beginner tutorial'. The screen is bright and inviting, with a subtle glow around the search bar to draw attention. The background is minimalist, focusing on the action of starting the learning journey.",
+        "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_6-hash-7b7d897f76b0940636596b88dd928f21_20250511_052430.png",
+        "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-660b975f-f71c-4de1-b0ce-a8fe72329899.png"
+      },
+      {
+        "id": 6,
+        "text": "and code your first project today.",
+        "start_time": 49.135002,
+        "end_time": 51.375,
+        "duration": 2.239998,
+        "words": 6,
+        "image_prompt": "An inspiring image of a person's hands typing code on a keyboard, with a simple Python project visible on the screen. The scene is intimate and personal, with soft lighting to create a welcoming and encouraging atmosphere for beginners.",
+        "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_7-hash-43913146abef66008333a274c73138c7_20250511_052436.png",
+        "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-5efe724f-21b8-42bc-ad9a-640411ff8a61.png"
+      },
+      {
+        "id": 7,
+        "text": "The best time to learn is now.",
+        "start_time": 51.535,
+        "end_time": 53.215,
+        "duration": 1.6800000000000068,
+        "words": 7,
+        "image_prompt": "A powerful, uplifting scene with a sunrise in the background, symbolizing new beginnings. In the foreground, a laptop displays a 'Start Learning Python' button, glowing as if ready to be clicked. The overall mood is optimistic and motivational, urging the viewer to take the first step now.",
+        "image_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/images/image_8-hash-295a39172a1544a436fd20059638b1c9_20250511_052425.png",
+        "depth_map_url": "https://pub-09f5881ec7024e0faaff06eba5fb1e05.r2.dev/depth-5e4e9ddb-2d22-44f4-8c96-c188e33fc328.png"
+      }
+    ]
+  }
+}
