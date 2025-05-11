@@ -21,7 +21,6 @@ from src.transcriber import Transcriber
 from src.prompt_generator import DeepSeekPromptGenerator as PromptGenerator
 from src.image_generator import ImageGenerator
 from src.json_builder import JsonBuilder
-from src.video import VideoGenerator
 
 class Mastermind:
     """Main coordinator for the YouTube video generation system."""
@@ -97,7 +96,6 @@ class Mastermind:
             image_generator_config=self.config.image_generator_config
         )
         self.json_builder = JsonBuilder(self.storage_manager)
-        self.video_generator = VideoGenerator()
         
         # State tracking
         self.state = {
@@ -338,15 +336,9 @@ class Mastermind:
             
             self.state["json_path"] = json_path
             
-            # Step 6: Generate video
-            print(f"\n=== Step 6: Generating Video ===\n")
-            self.state["status"] = "generating_video"
-            print("Note: Video generation with Remotion is a placeholder in this implementation.")
-            print(f"JSON file for Remotion is available at: {json_path}")
-            
-            # In a real implementation, you would generate the video here
-            # video_path = self.video_generator.generate_video(json_path)
-            # self.state["video_path"] = video_path
+            # Skip video generation step
+            print(f"\n=== Step 6: Video Generation (Skipped) ===\n")
+            print(f"JSON file with all video assets is available at: {json_path}")
 
             # === Custom: Clean up assets (JSON is already uniquely named by JsonBuilder) ===
             # The json_path in self.state["json_path"] is already the unique path.
@@ -401,7 +393,7 @@ class Mastermind:
             self.state["status"] = "completed"
             self.state["end_time"] = time.time()
             
-            print(f"\n=== Video Generation Complete ===\n")
+            print(f"\n=== Processing Complete ===\n")
             print(f"Total time: {self.state['end_time'] - self.state['start_time']:.2f} seconds")
             
             return self.state
