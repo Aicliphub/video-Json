@@ -69,6 +69,7 @@ class ImageGenerator:
                 )
 
                 if response.status_code == 200:
+                    # Handle successful response
                     image_data_url = response.json().get('result')
                     if image_data_url and image_data_url.startswith("data:image/png;base64,"):
                         base64_image_data = image_data_url.split(",")[1]
@@ -95,8 +96,23 @@ class ImageGenerator:
                              print(f"Image R2 URL is None for {segment_id} even after successful save_image call. Skipping depth map.")
                              return {"image_url": None, "depth_map_url": None} # Or handle as error
 
-                print(f"Attempt {attempt+1} failed with status {response.status_code} for {segment_id}, retrying...")
-                if response.status_code == 429:  # Rate limited
+                # Handle failed response
+                error_msg = f"Attempt {attempt+1} failed with status {response.status_code} for {segment_id}"
+                try:
+                    error_details = response.json().get('error', 'No error details')
+                    error_msg += f": {error_details}"
+                except:
+                    error_msg += ": Could not parse error details"
+                print(error_msg)
+
+                if response.status_code == 400:
+                    # Bad request - don't retry with same parameters
+                    return {
+                        "image_url": None,
+                        "depth_map_url": None,
+                        "error": error_msg
+                    }
+                elif response.status_code == 429:  # Rate limited
                     retry_after = int(response.headers.get('Retry-After', self.retry_delay))
                     time.sleep(retry_after)
                 else:
