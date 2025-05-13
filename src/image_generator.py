@@ -3,6 +3,7 @@ import time
 import requests
 import base64
 import json
+import traceback
 from typing import Dict, List, Any, Optional # Added Optional
 from datetime import datetime
 from src.utils.storage import StorageManager
@@ -17,78 +18,41 @@ class ImageGenerator:
             storage_manager: Storage manager instance.
         """
         self.storage = storage_manager
-        self.providers = [
-            {
-                'name': 'FreeFlux',
-                'api_key': "084bf5ff-cd3b-4c09-abaa-d2334322f562",
-                'endpoint': "https://api.freeflux.ai/v1/images/generate",
-                'model': "flux_1_schnell",
-                'headers': {
-                    'accept': 'application/json',
-                    'authorization': 'Bearer 084bf5ff-cd3b-4c09-abaa-d2334322f562',
-                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
-                }
-            },
-            {
-                'name': 'StableDiffusion',
-                'api_key': "",
-                'endpoint': "https://stablediffusionapi.com/api/v3/text2img",
-                'model': "stable-diffusion-xl",
-                'headers': {
-                    'accept': 'application/json',
-                    'content-type': 'application/json'
-                },
-                'payload': {
-                    'key': '',
-                    'prompt': '{prompt}',
-                    'negative_prompt': None,
-                    'width': '768',
-                    'height': '1024',
-                    'samples': '1',
-                    'num_inference_steps': '20',
-                    'safety_checker': False,
-                    'enhance_prompt': True,
-                    'seed': None,
-                    'guidance_scale': 7.5,
-                    'multi_lingual': False,
-                    'panorama': False,
-                    'self_attention': False,
-                    'upscale': False,
-                    'embeddings_model': None,
-                    'webhook': None,
-                    'track_id': None
-                }
+        self.provider = {
+            'name': 'FreeFlux',
+            'api_key': "084bf5ff-cd3b-4c09-abaa-d2334322f562",
+            'endpoint': "https://api.freeflux.ai/v1/images/generate",
+            'model': "flux_1_schnell",
+            'headers': {
+                'accept': 'application/json',
+                'authorization': 'Bearer 084bf5ff-cd3b-4c09-abaa-d2334322f562',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
             }
-        ]
-        self.active_provider = None
-        
-        # Try to initialize with first available provider
-        for provider in self.providers:
-            try:
-                test_response = requests.get(
-                    provider['endpoint'].replace('/v1/images/generate', ''),
-                    headers={'accept': 'application/json'},
-                    timeout=5
-                )
-                if test_response.status_code == 200:
-                    self.active_provider = provider
-                    print(f"Initialized with provider: {provider['name']}")
-                    break
-            except Exception as e:
-                print(f"Provider {provider['name']} unavailable: {str(e)}")
-        
-        if not self.active_provider:
-            print("Warning: No image generation providers available")
-
-        self.headers = {
-            'accept': 'application/json',
-            'authorization': f'Bearer {self.api_key}',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
         }
+        self.service_available = True
+        
+        # Test API connectivity during initialization
+        try:
+            test_response = requests.get(
+                "https://api.freeflux.ai",
+                headers={'accept': 'application/json'},
+                timeout=5
+            )
+            if test_response.status_code != 200:
+                error_msg = f"FreeFlux API may be unavailable (Status: {test_response.status_code})"
+                print(f"ERROR: {error_msg}")
+                print(f"DEBUG: API Response: {test_response.text}")
+                self.service_available = False
+        except Exception as e:
+            error_msg = f"FreeFlux API connectivity test failed: {str(e)}"
+            print(f"ERROR: {error_msg}")
+            print(f"DEBUG: Exception Type: {type(e).__name__}")
+            self.service_available = False
+
         self.max_retries = 3
         self.retry_delay = 2
         self.depth_map_generator = DepthMapGenerator() # Instantiate DepthMapGenerator
-        print(f"ImageGenerator initialized (Endpoint: {self.endpoint}, Model: {self.model}). DepthMapGenerator also initialized.")
+        print(f"ImageGenerator initialized with FreeFlux provider")
 
     def generate_image(self, prompt: str, segment_id: str) -> Dict[str, Optional[str]]:
         """
@@ -100,11 +64,11 @@ class ImageGenerator:
         - Generation fails after max retries
         - Storage upload fails
         """
-        if not self.active_provider:
-            print(f"Skipping image generation for {segment_id} - No image providers available")
+        if not self.service_available:
+            print(f"Skipping image generation for {segment_id} - FreeFlux API unavailable")
             return {"image_url": None, "depth_map_url": None}
             
-        provider = self.active_provider
+        provider = self.provider
         files = {
             'prompt': (None, prompt),
             'model': (None, provider['model']),
@@ -118,26 +82,22 @@ class ImageGenerator:
 
         for attempt in range(self.max_retries):
             try:
-                if provider['name'] == 'FreeFlux':
-                    response = requests.post(
-                        provider['endpoint'],
-                        headers=provider['headers'],
-                        files=files,
-                        timeout=30
-                    )
-                else:  # StableDiffusion
-                    payload = provider['payload'].copy()
-                    payload['prompt'] = prompt
-                    response = requests.post(
-                        provider['endpoint'],
-                        headers=provider['headers'],
-                        json=payload,
-                        timeout=30
-                    )
+                response = requests.post(
+                    provider['endpoint'],
+                    headers=provider['headers'],
+                    files=files,
+                    timeout=30
+                )
 
                 if response.status_code == 200:
-                    image_data_url = response.json().get('result')
-                    if image_data_url and image_data_url.startswith("data:image/png;base64,"):
+                    try:
+                        response_data = response.json()
+                        image_data_url = response_data.get('result')
+                        if not image_data_url:
+                            print(f"ERROR: No image data in API response for {segment_id}")
+                            print(f"DEBUG: Full API Response: {response_data}")
+                            continue
+                            
                         base64_image_data = image_data_url.split(",")[1]
                         image_bytes = base64.b64decode(base64_image_data)
                         
@@ -147,27 +107,43 @@ class ImageGenerator:
                             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                             filename = f"image_{segment_id}_{timestamp}"
                             image_r2_url = self.storage.save_image(image_bytes, filename, "images")
+                            
+                            if image_r2_url:
+                                print(f"Successfully generated and uploaded image for {segment_id}: {image_r2_url}")
+                                depth_map_url = self.depth_map_generator.generate_depth_map(image_r2_url)
+                                return {"image_url": image_r2_url, "depth_map_url": depth_map_url}
+                            else:
+                                print(f"CRITICAL: Image R2 URL is None for {segment_id} after successful save_image call")
+                                print("ACTION: This indicates a potential bug in the storage manager")
+                                return {"image_url": None, "depth_map_url": None}
+                                
                         except ValueError as e:
-                            print(f"Failed to upload to R2: {str(e)}")
-                            # If R2 fails, we can't generate a depth map from a public URL
-                            # Consider if image_data_url should be used for depth map or if it's better to skip
-                            print(f"Skipping depth map generation for {segment_id} due to R2 upload failure.")
+                            print(f"ERROR: Failed to upload image to R2 for {segment_id}: {str(e)}")
+                            print(f"DEBUG: Image Size: {len(image_bytes)} bytes")
+                            print(f"DEBUG: Filename: {filename}")
+                            print(f"ACTION: Skipping depth map generation for {segment_id} due to R2 upload failure")
                             return {"image_url": image_data_url, "depth_map_url": None} # Return data URL if R2 fails
-
-                        if image_r2_url:
-                            print(f"Successfully generated and uploaded image for {segment_id}: {image_r2_url}")
-                            depth_map_url = self.depth_map_generator.generate_depth_map(image_r2_url)
-                            return {"image_url": image_r2_url, "depth_map_url": depth_map_url}
-                        else: # Should not happen if save_image doesn't raise error and returns None
-                             print(f"Image R2 URL is None for {segment_id} even after successful save_image call. Skipping depth map.")
-                             return {"image_url": None, "depth_map_url": None} # Or handle as error
+                            
+                    except json.JSONDecodeError as e:
+                        print(f"ERROR: Failed to parse API response JSON for {segment_id}")
+                        print(f"DEBUG: Response Text: {response.text}")
+                        print(f"EXCEPTION: {str(e)}")
+                        continue
                 else:
-                    print(f"Attempt {attempt+1} failed to generate image for {segment_id}. Status: {response.status_code}, Response: {response.text}")
+                    print(f"ERROR: Attempt {attempt+1} failed for {segment_id}")
+                    print(f"STATUS: {response.status_code}")
+                    print(f"RESPONSE: {response.text}")
+                    print(f"HEADERS: {response.headers}")
             
-            except requests.exceptions.RequestException as e: # More specific exception for network errors
-                print(f"RequestException on attempt {attempt+1} for {segment_id}: {str(e)}")
-            except Exception as e: # General exception
-                print(f"Unexpected error on attempt {attempt+1} for {segment_id}: {str(e)}")
+            except requests.exceptions.RequestException as e:
+                print(f"NETWORK ERROR: Attempt {attempt+1} for {segment_id}")
+                print(f"EXCEPTION: {type(e).__name__}: {str(e)}")
+                if hasattr(e, 'request'):
+                    print(f"REQUEST: {e.request.method} {e.request.url}")
+            except Exception as e:
+                print(f"UNEXPECTED ERROR: Attempt {attempt+1} for {segment_id}")
+                print(f"EXCEPTION: {type(e).__name__}: {str(e)}")
+                print(f"STACKTRACE: {traceback.format_exc()}")
 
             # Common retry logic
             if attempt < self.max_retries - 1:
