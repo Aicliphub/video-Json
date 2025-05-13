@@ -17,7 +17,7 @@ class ImageGenerator:
             storage_manager: Storage manager instance.
         """
         self.storage = storage_manager
-        self.api_key = "084bf5ff-cd3b-4c09-abaa-d2334322f562"  # Using key from your .env; REPLACE IF THIS IS NOT YOUR VALID KEY
+        self.api_key = "084bf5ff-cd3b-4c09-abaa-d2334322f562"
         self.endpoint = "https://api.freeflux.ai/v1/images/generate"
         self.model = "flux_1_schnell"
         
