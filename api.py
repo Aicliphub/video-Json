@@ -157,7 +157,13 @@ async def get_status(job_id: str):
             )
         
         job = jobs[job_id]
-        return job
+        return {
+            "status": job["status"],
+            "job_id": job_id,
+            "input_prompt": job.get("input_prompt"),
+            "result": job.get("result"),
+            "error": job.get("error")
+        }
 
 @app.delete("/cleanup")
 async def cleanup_jobs(max_age_hours: int = 24):
