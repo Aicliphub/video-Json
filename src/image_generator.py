@@ -12,45 +12,40 @@ from src.depth_map_generator import DepthMapGenerator # Added import
 class ImageGenerator:
     def __init__(self, storage_manager: StorageManager):
         """
-        Initialize the Image Generator with configurable providers.
+        Initialize the Image Generator with multiple configurable providers.
         
         Args:
             storage_manager: Storage manager instance.
         """
         self.storage = storage_manager
-        self.provider = {
-            'name': 'FreeFlux',
-            'api_key': "084bf5ff-cd3b-4c09-abaa-d2334322f562",
-            'endpoint': "https://api.freeflux.ai/v1/images/generate",
-            'model': "flux_1_schnell",
-            'headers': {
-                'accept': 'application/json, text/plain, */*',
-                'authorization': f'Bearer 084bf5ff-cd3b-4c09-abaa-d2334322f562',
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+        self.providers = [
+            {
+                'name': 'FreeFlux',
+                'api_key': os.getenv("FREEFLUX_API_KEY", "084bf5ff-cd3b-4c09-abaa-d2334322f562"),
+                'endpoint': os.getenv("FREEFLUX_ENDPOINT", "https://api.freeflux.ai/v1/images/generate"),
+                'model': os.getenv("FREEFLUX_MODEL", "flux_1_schnell"),
+                'headers': {
+                    'accept': 'application/json, text/plain, */*',
+                    'authorization': f'Bearer {os.getenv("FREEFLUX_API_KEY", "084bf5ff-cd3b-4c09-abaa-d2334322f562")}',
+                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+                }
+            },
+            {
+                'name': 'StableDiffusion',
+                'api_key': os.getenv("STABLEDIFFUSION_API_KEY"),
+                'endpoint': os.getenv("STABLEDIFFUSION_ENDPOINT", "https://api.stablediffusion.ai/v1/generate"),
+                'model': os.getenv("STABLEDIFFUSION_MODEL", "stable-diffusion-xl"),
+                'headers': {
+                    'accept': 'application/json',
+                    'authorization': f'Bearer {os.getenv("STABLEDIFFUSION_API_KEY")}',
+                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+                }
             }
-        }
-        self.service_available = True
-        
-        # Test API connectivity during initialization
-        try:
-            test_response = requests.get(
-                "https://api.freeflux.ai",
-                headers={'accept': 'application/json'},
-                timeout=5
-            )
-            if test_response.status_code != 200:
-                error_msg = f"FreeFlux API may be unavailable (Status: {test_response.status_code})"
-                print(f"ERROR: {error_msg}")
-                print(f"DEBUG: API Response: {test_response.text}")
-                self.service_available = False
-        except Exception as e:
-            error_msg = f"FreeFlux API connectivity test failed: {str(e)}"
-            print(f"ERROR: {error_msg}")
-            print(f"DEBUG: Exception Type: {type(e).__name__}")
-            self.service_available = False
-
+        ]
+        self.current_provider_index = 0
         self.max_retries = 3
         self.retry_delay = 2
+        self.provider_retries = 2  # Max retries per provider before switching
         self.depth_map_generator = DepthMapGenerator() # Instantiate DepthMapGenerator
         print(f"ImageGenerator initialized with FreeFlux provider")
 
@@ -64,39 +59,49 @@ class ImageGenerator:
         - Generation fails after max retries
         - Storage upload fails
         """
-        if not self.service_available:
-            print(f"Skipping image generation for {segment_id} - FreeFlux API unavailable")
-            return {"image_url": None, "depth_map_url": None}
+        # Try each provider in order
+        for provider_idx, provider in enumerate(self.providers):
+            if not provider.get('api_key'):
+                print(f"Skipping {provider['name']} provider - no API key configured")
+                continue
+                
+            print(f"Attempting image generation with {provider['name']} provider")
             
-        provider = self.provider
-        files = {
-            'prompt': (None, prompt),
-            'model': (None, provider['model']),
-            'size': (None, '16_9'),
-            'lora': (None, ''),
-            'style': (None, 'no_style'),
-            'color': (None, ''),
-            'lighting': (None, ''),
-            'composition': (None, '')
-        }
+            files = {
+                'prompt': (None, prompt),
+                'model': (None, provider['model']),
+                'size': (None, '16_9'),
+                'lora': (None, ''),
+                'style': (None, 'no_style'),
+                'color': (None, ''),
+                'lighting': (None, ''),
+                'composition': (None, '')
+            }
 
-        for attempt in range(self.max_retries):
-            try:
-                response = requests.post(
-                    provider['endpoint'],
-                    headers=provider['headers'],
-                    files=files,
-                    timeout=30
-                )
+            for attempt in range(self.provider_retries):
+                try:
+                    response = requests.post(
+                        provider['endpoint'],
+                        headers=provider['headers'],
+                        files=files,
+                        timeout=30
+                    )
 
-                if response.status_code == 200:
-                    try:
-                        response_data = response.json()
-                        image_data_url = response_data.get('result')
-                        if not image_data_url:
-                            print(f"ERROR: No image data in API response for {segment_id}")
-                            print(f"DEBUG: Full API Response: {response_data}")
-                            continue
+                    if response.status_code == 200:
+                        # On success, reset current provider to this one
+                        self.current_provider_index = provider_idx
+                        try:
+                            response_data = response.json()
+                            image_data_url = response_data.get('result')
+                            if not image_data_url:
+                                print(f"ERROR: No image data in API response for {segment_id}")
+                                print(f"DEBUG: Full API Response: {response_data}")
+                                break  # Break out of this attempt to try next provider
+                        except json.JSONDecodeError as e:
+                            print(f"ERROR: Failed to parse API response JSON for {segment_id}")
+                            print(f"DEBUG: Response Text: {response.text}")
+                            print(f"EXCEPTION: {str(e)}")
+                            break  # Break out of this attempt to try next provider
                             
                         base64_image_data = image_data_url.split(",")[1]
                         image_bytes = base64.b64decode(base64_image_data)
@@ -125,37 +130,46 @@ class ImageGenerator:
                             print(f"ACTION: Skipping depth map generation for {segment_id} due to R2 upload failure")
                             return {"image_url": image_data_url, "depth_map_url": None} # Return data URL if R2 fails
                             
-                    except json.JSONDecodeError as e:
-                        print(f"ERROR: Failed to parse API response JSON for {segment_id}")
-                        print(f"DEBUG: Response Text: {response.text}")
-                        print(f"EXCEPTION: {str(e)}")
-                        continue
-                else:
-                    print(f"ERROR: Attempt {attempt+1} failed for {segment_id}")
-                    print(f"STATUS: {response.status_code}")
-                    print(f"RESPONSE: {response.text}")
-                    print(f"HEADERS: {response.headers}")
-            
-            except requests.exceptions.RequestException as e:
-                print(f"NETWORK ERROR: Attempt {attempt+1} for {segment_id}")
-                print(f"EXCEPTION: {type(e).__name__}: {str(e)}")
-                if hasattr(e, 'request'):
-                    print(f"REQUEST: {e.request.method} {e.request.url}")
-            except Exception as e:
-                print(f"UNEXPECTED ERROR: Attempt {attempt+1} for {segment_id}")
-                print(f"EXCEPTION: {type(e).__name__}: {str(e)}")
-                print(f"STACKTRACE: {traceback.format_exc()}")
+                        except json.JSONDecodeError as e:
+                            print(f"ERROR: Failed to parse API response JSON for {segment_id}")
+                            print(f"DEBUG: Response Text: {response.text}")
+                            print(f"EXCEPTION: {str(e)}")
+                            break  # Break out of this attempt to try next provider
+                    else:
+                        print(f"ERROR: Attempt {attempt+1} failed for {segment_id}")
+                        print(f"STATUS: {response.status_code}")
+                        print(f"RESPONSE: {response.text}")
+                        print(f"HEADERS: {response.headers}")
+                        break  # Break out of this attempt to try next provider
 
-            # Common retry logic
-            if attempt < self.max_retries - 1:
-                print(f"Retrying image generation for {segment_id} (attempt {attempt+2}/{self.max_retries})...")
-                time.sleep(self.retry_delay)
-            else:
-                print(f"Failed to generate image for {segment_id} after {self.max_retries} attempts.")
-        
-        # This print statement might be redundant if the one in the loop's else branch covers all failures.
-        # print(f"Failed to generate image for {segment_id} after multiple attempts.") 
-        return {"image_url": None, "depth_map_url": None} # Return None for both if image generation fails
+                except requests.exceptions.RequestException as e:
+                    print(f"NETWORK ERROR: Attempt {attempt+1} for {segment_id}")
+                    print(f"EXCEPTION: {type(e).__name__}: {str(e)}")
+                    if hasattr(e, 'request'):
+                        print(f"REQUEST: {e.request.method} {e.request.url}")
+                    
+                    # Common retry logic
+                    if attempt < self.provider_retries - 1:
+                        print(f"Retrying with {provider['name']} (attempt {attempt+2}/{self.provider_retries})...")
+                        time.sleep(self.retry_delay)
+                    else:
+                        print(f"Failed with {provider['name']} after {self.provider_retries} attempts")
+                        
+                except Exception as e:
+                    print(f"UNEXPECTED ERROR: Attempt {attempt+1} for {segment_id}")
+                    print(f"EXCEPTION: {type(e).__name__}: {str(e)}")
+                    print(f"STACKTRACE: {traceback.format_exc()}")
+                    
+                    # Common retry logic
+                    if attempt < self.provider_retries - 1:
+                        print(f"Retrying with {provider['name']} (attempt {attempt+2}/{self.provider_retries})...")
+                        time.sleep(self.retry_delay)
+                    else:
+                        print(f"Failed with {provider['name']} after {self.provider_retries} attempts")
+                    
+        # If we get here, all providers failed
+        print(f"Failed to generate image for {segment_id} after trying all providers")
+        return {"image_url": None, "depth_map_url": None}
 
     def generate_batch(self, prompts: Dict[str, str], batch_size: int = 20) -> Dict[str, Dict[str, Optional[str]]]:
         """
