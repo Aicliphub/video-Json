@@ -290,13 +290,43 @@ class Mastermind:
             # Generate all images in batch
             if prompts:
                 print(f"Generating {len(prompts)} images and their depth maps...")
-                image_data = self.image_generator.generate_batch(prompts) # image_data is now Dict[str, Dict[str, Optional[str]]]
-                self.state["image_data"] = image_data
+                try:
+                    image_data = self.image_generator.generate_batch(prompts)
+                    self.state["image_data"] = image_data
+                    
+                    # Adjust print statement to count successful image_urls
+                    successful_images = len([data for data in image_data.values() if data and data.get("image_url")])
+                    successful_depth_maps = len([data for data in image_data.values() if data and data.get("depth_map_url")])
+                    print(f"Successfully generated {successful_images}/{len(prompts)} images and {successful_depth_maps}/{successful_images} depth maps.")
                 
-                # Adjust print statement to count successful image_urls
-                successful_images = len([data for data in image_data.values() if data and data.get("image_url")])
-                successful_depth_maps = len([data for data in image_data.values() if data and data.get("depth_map_url")])
-                print(f"Successfully generated {successful_images}/{len(prompts)} images and {successful_depth_maps}/{successful_images} depth maps.")
+                except ConnectionError as ce:
+                    print(f"ERROR: Image generation API connection failed: {str(ce)}")
+                    print("Please check your FreeFlux API key and network connectivity in render.com environment variables")
+                    print("Falling back to placeholder images")
+                    
+                    # Create placeholder image data
+                    image_data = {
+                        key: {
+                            "image_url": None,
+                            "depth_map_url": None,
+                            "error": str(ce),
+                            "placeholder": True
+                        } for key in prompts.keys()
+                    }
+                    self.state["image_data"] = image_data
+                    self.state["image_generation_error"] = str(ce)
+                
+                except Exception as e:
+                    print(f"ERROR: Image generation failed: {str(e)}")
+                    image_data = {
+                        key: {
+                            "image_url": None,
+                            "depth_map_url": None,
+                            "error": str(e)
+                        } for key in prompts.keys()
+                    }
+                    self.state["image_data"] = image_data
+                    self.state["image_generation_error"] = str(e)
             else:
                 print("Warning: No image prompts found to generate")
                 image_data = {}

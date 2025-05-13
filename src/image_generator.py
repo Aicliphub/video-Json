@@ -37,20 +37,36 @@ class ImageGenerator:
             'authorization': f'Bearer {self.api_key}', # Use passed API key
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36' # Keep user-agent
         }
+
+        # Validate API connectivity
+        try:
+            test_response = requests.get(
+                self.endpoint.replace('/generate', '/health'),
+                headers=self.headers,
+                timeout=5
+            )
+            if test_response.status_code != 200:
+                raise ConnectionError(f"API health check failed with status {test_response.status_code}")
+        except Exception as e:
+            raise ConnectionError(f"Failed to connect to FreeFlux API: {str(e)}. Please check your API key and network connectivity.")
         self.max_retries = 3
         self.retry_delay = 2
         self.depth_map_generator = DepthMapGenerator() # Instantiate DepthMapGenerator
-        print(f"ImageGenerator initialized (Endpoint: {self.endpoint}, Model: {self.model}). DepthMapGenerator also initialized.")
+        print(f"ImageGenerator initialized (Endpoint: {self.endpoint}, Model: {self.model}). API connection validated. DepthMapGenerator also initialized.")
 
     def generate_image(self, prompt: str, segment_id: str) -> Dict[str, Optional[str]]:
         """
         Generate a single image from prompt and its corresponding depth map.
         Returns a dictionary with 'image_url' and 'depth_map_url'.
+        
+        Raises:
+            ConnectionError: If API is unreachable after retries
+            ValueError: If API returns invalid response
         """
         files = {
             'prompt': (None, prompt),
             'model': (None, self.model), # Use model from config
-            'size': (None, '9_16'), # Keep vertical aspect ratio
+            'size': (None, '9_16'), # Use horizontal aspect ratio (matches working API)
             'lora': (None, ''),
             'style': (None, 'no_style'),
             'color': (None, ''),
@@ -58,19 +74,25 @@ class ImageGenerator:
             'composition': (None, '')
         }
 
+        last_error = None
+
         for attempt in range(self.max_retries):
             try:
                 response = requests.post(
                     self.endpoint, # Use endpoint from config
                     headers=self.headers,
-                    files=files
+                    files=files,
+                    timeout=10
                 )
 
                 if response.status_code == 200:
                     image_data_url = response.json().get('result')
                     if image_data_url and image_data_url.startswith("data:image/png;base64,"):
                         base64_image_data = image_data_url.split(",")[1]
-                        image_bytes = base64.b64decode(base64_image_data)
+                        try:
+                            image_bytes = base64.b64decode(base64_image_data)
+                        except Exception as e:
+                            raise ValueError(f"Invalid image data received from API: {str(e)}")
                         
                         image_r2_url: Optional[str] = None
                         try:
@@ -80,10 +102,8 @@ class ImageGenerator:
                             image_r2_url = self.storage.save_image(image_bytes, filename, "images")
                         except ValueError as e:
                             print(f"Failed to upload to R2: {str(e)}")
-                            # If R2 fails, we can't generate a depth map from a public URL
-                            # Consider if image_data_url should be used for depth map or if it's better to skip
-                            print(f"Skipping depth map generation for {segment_id} due to R2 upload failure.")
-                            return {"image_url": image_data_url, "depth_map_url": None} # Return data URL if R2 fails
+                            # If R2 fails, return the data URL directly
+                            return {"image_url": image_data_url, "depth_map_url": None}
 
                         if image_r2_url:
                             print(f"Successfully generated and uploaded image for {segment_id}: {image_r2_url}")
@@ -93,15 +113,31 @@ class ImageGenerator:
                              print(f"Image R2 URL is None for {segment_id} even after successful save_image call. Skipping depth map.")
                              return {"image_url": None, "depth_map_url": None} # Or handle as error
 
-                print(f"Attempt {attempt+1} failed to generate image for {segment_id}, retrying...")
-                time.sleep(self.retry_delay)
+                # Handle non-200 responses
+                error_msg = f"API returned status {response.status_code}"
+                if response.text:
+                    try:
+                        error_detail = response.json().get('error', response.text)
+                        error_msg += f": {error_detail}"
+                    except:
+                        error_msg += f": {response.text[:200]}"
+                last_error = error_msg
+                print(f"Attempt {attempt+1} failed for {segment_id}: {error_msg}")
+                
+            except requests.exceptions.RequestException as e:
+                last_error = f"Network error: {str(e)}"
+                print(f"Attempt {attempt+1} network error for {segment_id}: {str(e)}")
             except Exception as e:
-                print(f"Error generating image for {segment_id}: {str(e)}")
-                if attempt < self.max_retries - 1:
-                    time.sleep(self.retry_delay)
+                last_error = f"Unexpected error: {str(e)}"
+                print(f"Attempt {attempt+1} unexpected error for {segment_id}: {str(e)}")
+            
+            if attempt < self.max_retries - 1:
+                time.sleep(self.retry_delay * (attempt + 1)) # Exponential backoff
         
-        print(f"Failed to generate image for {segment_id} after multiple attempts.") # More specific error
-        return {"image_url": None, "depth_map_url": None} # Return None for both if image generation fails
+        raise ConnectionError(
+            f"Failed to generate image for {segment_id} after {self.max_retries} attempts. "
+            f"Last error: {last_error}. Please check your API key and network connectivity."
+        )
 
     def generate_batch(self, prompts: Dict[str, str], batch_size: int = 20) -> Dict[str, Dict[str, Optional[str]]]:
         """
