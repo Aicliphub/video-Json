@@ -11,20 +11,74 @@ from src.depth_map_generator import DepthMapGenerator # Added import
 class ImageGenerator:
     def __init__(self, storage_manager: StorageManager):
         """
-        Initialize the Image Generator with hardcoded settings.
+        Initialize the Image Generator with configurable providers.
         
         Args:
             storage_manager: Storage manager instance.
         """
         self.storage = storage_manager
-        self.api_key = "084bf5ff-cd3b-4c09-abaa-d2334322f562"
-        self.endpoint = "https://api.freeflux.ai/v1/images/generate"
-        self.model = "flux_1_schnell"
+        self.providers = [
+            {
+                'name': 'FreeFlux',
+                'api_key': "084bf5ff-cd3b-4c09-abaa-d2334322f562",
+                'endpoint': "https://api.freeflux.ai/v1/images/generate",
+                'model': "flux_1_schnell",
+                'headers': {
+                    'accept': 'application/json',
+                    'authorization': 'Bearer 084bf5ff-cd3b-4c09-abaa-d2334322f562',
+                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+                }
+            },
+            {
+                'name': 'StableDiffusion',
+                'api_key': "",
+                'endpoint': "https://stablediffusionapi.com/api/v3/text2img",
+                'model': "stable-diffusion-xl",
+                'headers': {
+                    'accept': 'application/json',
+                    'content-type': 'application/json'
+                },
+                'payload': {
+                    'key': '',
+                    'prompt': '{prompt}',
+                    'negative_prompt': None,
+                    'width': '768',
+                    'height': '1024',
+                    'samples': '1',
+                    'num_inference_steps': '20',
+                    'safety_checker': False,
+                    'enhance_prompt': True,
+                    'seed': None,
+                    'guidance_scale': 7.5,
+                    'multi_lingual': False,
+                    'panorama': False,
+                    'self_attention': False,
+                    'upscale': False,
+                    'embeddings_model': None,
+                    'webhook': None,
+                    'track_id': None
+                }
+            }
+        ]
+        self.active_provider = None
         
-        # It's good practice to check if the key looks like a placeholder or a known default,
-        # but for now, we'll assume the user intends to use this key or will replace it.
-        # Consider adding a more robust check or warning if this key is known to be non-functional.
-        print(f"ImageGenerator using API Key: {self.api_key}")
+        # Try to initialize with first available provider
+        for provider in self.providers:
+            try:
+                test_response = requests.get(
+                    provider['endpoint'].replace('/v1/images/generate', ''),
+                    headers={'accept': 'application/json'},
+                    timeout=5
+                )
+                if test_response.status_code == 200:
+                    self.active_provider = provider
+                    print(f"Initialized with provider: {provider['name']}")
+                    break
+            except Exception as e:
+                print(f"Provider {provider['name']} unavailable: {str(e)}")
+        
+        if not self.active_provider:
+            print("Warning: No image generation providers available")
 
         self.headers = {
             'accept': 'application/json',
@@ -40,10 +94,20 @@ class ImageGenerator:
         """
         Generate a single image from prompt and its corresponding depth map.
         Returns a dictionary with 'image_url' and 'depth_map_url'.
+        
+        Will return {'image_url': None, 'depth_map_url': None} if:
+        - No providers are available
+        - Generation fails after max retries
+        - Storage upload fails
         """
+        if not self.active_provider:
+            print(f"Skipping image generation for {segment_id} - No image providers available")
+            return {"image_url": None, "depth_map_url": None}
+            
+        provider = self.active_provider
         files = {
             'prompt': (None, prompt),
-            'model': (None, self.model), # Use model from config
+            'model': (None, provider['model']),
             'size': (None, '9_16'), # Keep vertical aspect ratio
             'lora': (None, ''),
             'style': (None, 'no_style'),
@@ -54,11 +118,22 @@ class ImageGenerator:
 
         for attempt in range(self.max_retries):
             try:
-                response = requests.post(
-                    self.endpoint, # Use endpoint from config
-                    headers=self.headers,
-                    files=files
-                )
+                if provider['name'] == 'FreeFlux':
+                    response = requests.post(
+                        provider['endpoint'],
+                        headers=provider['headers'],
+                        files=files,
+                        timeout=30
+                    )
+                else:  # StableDiffusion
+                    payload = provider['payload'].copy()
+                    payload['prompt'] = prompt
+                    response = requests.post(
+                        provider['endpoint'],
+                        headers=provider['headers'],
+                        json=payload,
+                        timeout=30
+                    )
 
                 if response.status_code == 200:
                     image_data_url = response.json().get('result')
