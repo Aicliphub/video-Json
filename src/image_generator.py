@@ -34,12 +34,11 @@ class ImageGenerator:
              
         self.headers = {
             'accept': 'application/json',
-            'authorization': f'Bearer {self.api_key}',
-            'user-agent': 'VideoGenerationAPI/1.0'
+            'authorization': f'Bearer {self.api_key}', # Use passed API key
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36' # Keep user-agent
         }
-        self.max_retries = 5  # Increased retries
-        self.retry_delay = 5  # Increased delay
-        self.request_timeout = 30  # Timeout in seconds
+        self.max_retries = 3
+        self.retry_delay = 2
         self.depth_map_generator = DepthMapGenerator() # Instantiate DepthMapGenerator
         print(f"ImageGenerator initialized (Endpoint: {self.endpoint}, Model: {self.model}). DepthMapGenerator also initialized.")
 
@@ -62,14 +61,12 @@ class ImageGenerator:
         for attempt in range(self.max_retries):
             try:
                 response = requests.post(
-                    self.endpoint,
+                    self.endpoint, # Use endpoint from config
                     headers=self.headers,
-                    files=files,
-                    timeout=self.request_timeout
+                    files=files
                 )
 
                 if response.status_code == 200:
-                    # Handle successful response
                     image_data_url = response.json().get('result')
                     if image_data_url and image_data_url.startswith("data:image/png;base64,"):
                         base64_image_data = image_data_url.split(",")[1]
@@ -96,38 +93,15 @@ class ImageGenerator:
                              print(f"Image R2 URL is None for {segment_id} even after successful save_image call. Skipping depth map.")
                              return {"image_url": None, "depth_map_url": None} # Or handle as error
 
-                # Handle failed response
-                error_msg = f"Attempt {attempt+1} failed with status {response.status_code} for {segment_id}"
-                try:
-                    error_details = response.json().get('error', 'No error details')
-                    error_msg += f": {error_details}"
-                except:
-                    error_msg += ": Could not parse error details"
-                print(error_msg)
-
-                if response.status_code == 400:
-                    # Bad request - don't retry with same parameters
-                    return {
-                        "image_url": None,
-                        "depth_map_url": None,
-                        "error": error_msg
-                    }
-                elif response.status_code == 429:  # Rate limited
-                    retry_after = int(response.headers.get('Retry-After', self.retry_delay))
-                    time.sleep(retry_after)
-                else:
-                    time.sleep(self.retry_delay)
-            except requests.exceptions.RequestException as e:
-                print(f"Network error generating image for {segment_id}: {str(e)}")
+                print(f"Attempt {attempt+1} failed to generate image for {segment_id}, retrying...")
+                time.sleep(self.retry_delay)
+            except Exception as e:
+                print(f"Error generating image for {segment_id}: {str(e)}")
                 if attempt < self.max_retries - 1:
                     time.sleep(self.retry_delay)
         
-        print(f"Failed to generate image for {segment_id} after {self.max_retries} attempts.")
-        return {
-            "image_url": None,
-            "depth_map_url": None,
-            "error": "Max retries exceeded"
-        }
+        print(f"Failed to generate image for {segment_id} after multiple attempts.") # More specific error
+        return {"image_url": None, "depth_map_url": None} # Return None for both if image generation fails
 
     def generate_batch(self, prompts: Dict[str, str], batch_size: int = 20) -> Dict[str, Dict[str, Optional[str]]]:
         """
