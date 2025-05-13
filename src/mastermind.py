@@ -162,7 +162,7 @@ class Mastermind:
             input_prompt_str: Combined topic, character, and style directive.
             
         Returns:
-            State dictionary with results
+            State dictionary with results including json_data
         """
         try:
             self.state["input_prompt"] = input_prompt_str
@@ -340,11 +340,9 @@ class Mastermind:
             print(f"\n=== Step 6: Video Generation (Skipped) ===\n")
             print(f"JSON file with all video assets is available at: {json_path}")
 
-            # === Custom: Clean up assets (JSON is already uniquely named by JsonBuilder) ===
-            # The json_path in self.state["json_path"] is already the unique path.
+            # Clean up all files except JSON
             current_json_path_str = self.state.get("json_path")
             if current_json_path_str:
-                # This is the path to the uniquely named JSON file to be preserved.
                 preserved_json_path_obj = Path(current_json_path_str)
                 assets_root_path = preserved_json_path_obj.parent
                 print(f"Preserving JSON file: '{preserved_json_path_obj}'")
@@ -368,26 +366,21 @@ class Mastermind:
                     else:
                         print(f"Subdirectory '{subdir_path}' not found or not a directory, skipping cleanup for it.")
                 
-                # Clean up other files in the root assets directory
-                print(f"Cleaning other files in '{assets_root_path}'...")
+                # Clean up other files in the root assets directory except JSON
+                print(f"Cleaning other files in '{assets_root_path}' (except JSON)...")
                 if assets_root_path.exists() and assets_root_path.is_dir():
                     for item_name in os.listdir(assets_root_path):
                         item_path = assets_root_path / item_name
-                        # Ensure we don't delete the uniquely named video.json or the subdirectories
+                        # Skip the preserved JSON file and subdirectories
                         if item_path.is_file() and item_path != preserved_json_path_obj:
                             try:
                                 os.remove(item_path)
                                 print(f"Removed file: '{item_path}'")
                             except OSError as oe_clean_root:
                                 print(f"Error removing root asset file '{item_path}': {oe_clean_root}")
-                        elif item_path.is_dir() and item_path.name not in asset_subdirs_to_clean:
-                            # This condition is to avoid deleting other unexpected directories.
-                            # If other directories should also be removed, this logic would need adjustment.
-                            pass # Currently, only cleaning specified subdirs and files not matching the preserved JSON.
                 print("Asset cleanup process finished.")
             else:
                 print("Warning: 'json_path' not found in state, skipping asset cleanup.")
-            # === End Custom Logic ===
 
             # Update state
             self.state["status"] = "completed"
@@ -396,7 +389,11 @@ class Mastermind:
             print(f"\n=== Processing Complete ===\n")
             print(f"Total time: {self.state['end_time'] - self.state['start_time']:.2f} seconds")
             
-            return self.state
+            # Include the json data in the returned state
+            return {
+                **self.state,
+                "json_data": self.json_builder.json_data
+            }
             
         except Exception as e:
             # Update state with error

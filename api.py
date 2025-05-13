@@ -1,20 +1,44 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 from typing import Dict, Any
 import uuid
 import asyncio
 import json
 import logging
+import os
+import time
+from fastapi.middleware import Middleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from src.mastermind import Mastermind
+
+# Rate limiter setup
+limiter = Limiter(key_func=get_remote_address)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class GenerateRequest(BaseModel):
-    input_prompt: str
+    input_prompt: constr(min_length=10, max_length=500)
 
-app = FastAPI(title="Video Generation API")
+app = FastAPI(
+    title="Video Generation API",
+    middleware=[
+        Middleware(TrustedHostMiddleware, allowed_hosts=["*"]),
+        Middleware(GZipMiddleware)
+    ]
+)
+
+# Apply rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, lambda r, e: JSONResponse(
+    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    content={"detail": "Rate limit exceeded"}
+))
 
 from threading import Lock
 
@@ -23,7 +47,8 @@ jobs: Dict[str, Dict[str, Any]] = {}
 jobs_lock = Lock()
 
 @app.post("/generate")
-async def generate_video(request: GenerateRequest):
+@limiter.limit("10/minute")
+async def generate_video(request: Request, payload: GenerateRequest):
     """Start a new video generation job"""
     job_id = str(uuid.uuid4())
     
@@ -31,13 +56,13 @@ async def generate_video(request: GenerateRequest):
     with jobs_lock:
         jobs[job_id] = {
             "status": "pending",
-            "input_prompt": request.input_prompt,
+            "input_prompt": payload.input_prompt,
             "result": None,
             "error": None
         }
     
     # Run generation in background with new instance
-    asyncio.create_task(run_generation(job_id, request.input_prompt))
+    asyncio.create_task(run_generation(job_id, payload.input_prompt))
     
     return JSONResponse(
         status_code=status.HTTP_202_ACCEPTED,
@@ -53,6 +78,7 @@ executor = ThreadPoolExecutor(max_workers=4)
 async def run_generation(job_id: str, input_prompt: str):
     """Background task to run video generation"""
     try:
+        logger.info(f"Starting generation for job {job_id}")
         loop = asyncio.get_running_loop()
         mastermind = Mastermind()
         
@@ -62,16 +88,23 @@ async def run_generation(job_id: str, input_prompt: str):
             functools.partial(mastermind.generate_video, input_prompt)
         )
         
+        # Store the JSON data directly in the result
         with jobs_lock:
             jobs[job_id].update({
                 "status": "completed",
-                "result": result
+                "result": result,
+                "end_time": time.time()
             })
+        logger.info(f"Successfully completed job {job_id}")
+        
     except Exception as e:
+        error_msg = f"Job {job_id} failed: {str(e)}"
+        logger.error(error_msg, exc_info=True)
         with jobs_lock:
             jobs[job_id].update({
                 "status": "failed",
-                "error": str(e)
+                "error": error_msg,
+                "end_time": time.time()
             })
 
 @app.get("/status/{job_id}")
@@ -96,7 +129,7 @@ async def get_status(job_id: str):
 
 @app.delete("/cleanup")
 async def cleanup_jobs(max_age_hours: int = 24):
-    """Clean up old completed/failed jobs"""
+    """Clean up old completed/failed jobs from memory (does not delete generated JSON files)"""
     cutoff = time.time() - (max_age_hours * 3600)
     with jobs_lock:
         to_delete = [
@@ -125,31 +158,15 @@ async def get_result(job_id: str):
             detail="Job not yet completed"
         )
     
-    # Read the generated JSON file
-    json_path = job["result"].get("json_path")
-    if not json_path:
+    # Return the JSON data directly
+    json_data = job["result"].get("json_data")
+    if not json_data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="JSON assets file not found"
+            detail="JSON data not found in result"
         )
     
-    try:
-        with open(json_path, 'r') as f:
-            json_content = json.load(f)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to read JSON file: {str(e)}"
-        )
-    
-    return {
-        "job_id": job_id,
-        "status": job["status"],
-        "assets": {
-            "json_path": json_path,
-            "content": json_content
-        }
-    }
+    return json_data
 
 if __name__ == "__main__":
     import uvicorn

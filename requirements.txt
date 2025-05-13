@@ -1,10 +1,13 @@
+fastapi>=0.95.2
+uvicorn>=0.22.0
+pydantic>=1.10.7
+python-dotenv>=0.21.0
+slowapi>=0.1.7
+python-multipart>=0.0.5
 google-generativeai
-python-dotenv
 boto3
 requests
 pydub
 pillow
 tqdm
-fastapi
-uvicorn
 openai

@@ -1,9 +1,9 @@
 """
 Text-to-Speech Generator Module
 
-Converts text scripts to natural-sounding audio using the AllVoiceLab API.
+Converts text scripts to natural-sounding audio using Deepgram API.
 """
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import requests
 import json
 import boto3
@@ -11,8 +11,8 @@ from datetime import datetime
 from datetime import datetime as dt
 import random
 import string
-
-# Note: Hardcoded API config removed, should be passed via __init__
+import tempfile
+import os
 
 def _upload_to_r2(audio_data, r2_config: Dict[str, str], extension="wav"):
     """Upload audio data to R2 storage and return public URL"""
@@ -43,6 +43,60 @@ def _upload_to_r2(audio_data, r2_config: Dict[str, str], extension="wav"):
     except Exception as e:
         print(f"Error uploading to R2: {e}")
         return None
+
+def _text_to_speech_deepgram(text: str,
+                            api_key: str,
+                            model: str,
+                            r2_config: Dict[str, str]) -> tuple[int, Optional[str]]:
+    """
+    Converts text to speech using Deepgram API.
+
+    Args:
+        text: The text to convert (up to 2000 characters)
+        api_key: Deepgram API key
+        model: Deepgram voice model name
+        r2_config: R2 storage configuration
+
+    Returns:
+        tuple: (status_code, audio_url) where:
+               status_code is HTTP status code
+               audio_url is public R2 URL if upload succeeded, else None
+    """
+    if len(text) > 2000:
+        raise ValueError("Deepgram text length cannot exceed 2000 characters")
+
+    headers = {
+        "Authorization": f"Token {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "text": text
+    }
+
+    try:
+        response = requests.post(
+            f"https://api.deepgram.com/v1/speak?model={model}",
+            headers=headers,
+            json=payload
+        )
+        response.raise_for_status()
+        
+        audio_url = None
+        if response.status_code == 200:
+            audio_url = _upload_to_r2(response.content, r2_config, extension="mp3")
+            if audio_url:
+                print(f"Audio uploaded to R2: {audio_url}")
+            else:
+                print("Audio generation succeeded but R2 upload failed")
+
+        return (response.status_code, audio_url)
+
+    except requests.exceptions.RequestException as e:
+        print(f"Deepgram API call failed: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            return (e.response.status_code, None)
+        return (500, None)
 
 def _text_to_speech_allvoicelab(text: str, 
                                 api_key: str, 
@@ -137,7 +191,9 @@ class TTSGenerator:
         if self.provider == "allvoicelab":
             if not all(k in self.config for k in ["allvoicelab_endpoint", "voice_id", "model"]):
                  raise ValueError("Missing required AllVoiceLab configuration (endpoint, voice_id, model).")
-        # Add elif for other providers if supported
+        elif self.provider == "deepgram":
+            if not all(k in self.config for k in ["model"]):
+                 raise ValueError("Missing required Deepgram configuration (model).")
         else:
             raise ValueError(f"Unsupported TTS provider: {self.provider}")
 
@@ -185,11 +241,17 @@ class TTSGenerator:
                     endpoint=self.config["allvoicelab_endpoint"],
                     voice_id=self.config["voice_id"],
                     model_id=self.config["model"],
-                    r2_config=self.r2_config, # Pass R2 config
-                    language_code='en', # Assuming English for now, could be configurable
-                    speed=1.0 # Assuming default speed, could be configurable
+                    r2_config=self.r2_config,
+                    language_code='en',
+                    speed=1.0
                 )
-            # Add elif for other providers here
+            elif self.provider == "deepgram":
+                status_code, audio_url = _text_to_speech_deepgram(
+                    text=chunk,
+                    api_key=self.api_key,
+                    model=self.config["model"],
+                    r2_config=self.r2_config
+                )
             
             if status_code == 200 and audio_url:
                 audio_urls.append(audio_url)
