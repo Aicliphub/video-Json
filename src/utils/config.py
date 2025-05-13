@@ -79,7 +79,7 @@ class ProjectConfig:
         self.allvoicelab_api_key = os.getenv("ALLVOICELAB_API_KEY", "ak_85a73e532c7798494e280ad243f114e12100") # Default matches hardcoded value
         self.deepseek_api_key = os.getenv("DEEPSEEK_API_KEY", "sk-ca74a33b93cd4c30be05b27b1f1b5128") # Default matches hardcoded value
         self.deepgram_api_key = os.getenv("DEEPGRAM_API_KEY") # No default, should be set
-        # self.freeflux_api_key = os.getenv("FREEFLUX_API_KEY", "084bf5ff-cd3b-4c09-abaa-d2334322f562") # No longer loaded from .env
+        self.freeflux_api_key = os.getenv("FREEFLUX_API_KEY", "084bf5ff-cd3b-4c09-abaa-d2334322f562") # Default matches hardcoded value
         
         # Style Configuration
         self.default_style = os.getenv("DEFAULT_STYLE", "")
@@ -114,11 +114,11 @@ class ProjectConfig:
             "model": os.getenv("DEEPGRAM_MODEL", "nova-3") # Default model
         }
 
-        # Image Generator Configuration (FreeFlux specific) - No longer loaded from .env
-        # self.image_generator_config = {
-        #     "endpoint": os.getenv("FREEFLUX_API_ENDPOINT", "https://api.freeflux.ai/v1/images/generate"),
-        #     "model": os.getenv("FREEFLUX_MODEL", "flux_1_schnell")
-        # }
+        # Image Generator Configuration (FreeFlux specific)
+        self.image_generator_config = {
+            "endpoint": os.getenv("FREEFLUX_API_ENDPOINT", "https://api.freeflux.ai/v1/images/generate"),
+            "model": os.getenv("FREEFLUX_MODEL", "flux_1_schnell")
+        }
 
         # Project paths
         self.paths = {
@@ -140,8 +140,8 @@ class ProjectConfig:
         required_keys = {
             "AllVoiceLab": self.allvoicelab_api_key,
             "DeepSeek": self.deepseek_api_key,
-            "Deepgram": self.deepgram_api_key
-            # "FreeFlux": self.freeflux_api_key # No longer validated here
+            "Deepgram": self.deepgram_api_key,
+            "FreeFlux": self.freeflux_api_key
         }
         for service, key in required_keys.items():
             if not key:
@@ -168,8 +168,8 @@ class ProjectConfig:
         if not self.transcriber_config["model"]:
              raise ValueError("Missing Deepgram model name")
 
-        # Check FreeFlux config - No longer validated here
-        # if not self.image_generator_config["endpoint"] or not self.image_generator_config["model"]:
-        #      raise ValueError("Missing FreeFlux endpoint or model name")
+        # Check FreeFlux config
+        if not self.image_generator_config["endpoint"] or not self.image_generator_config["model"]:
+             raise ValueError("Missing FreeFlux endpoint or model name")
 
         return True
