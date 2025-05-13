@@ -24,8 +24,8 @@ class ImageGenerator:
             'endpoint': "https://api.freeflux.ai/v1/images/generate",
             'model': "flux_1_schnell",
             'headers': {
-                'accept': 'application/json',
-                'authorization': 'Bearer 084bf5ff-cd3b-4c09-abaa-d2334322f562',
+                'accept': 'application/json, text/plain, */*',
+                'authorization': f'Bearer 084bf5ff-cd3b-4c09-abaa-d2334322f562',
                 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
             }
         }
@@ -72,7 +72,7 @@ class ImageGenerator:
         files = {
             'prompt': (None, prompt),
             'model': (None, provider['model']),
-            'size': (None, '9_16'), # Keep vertical aspect ratio
+            'size': (None, '16_9'),
             'lora': (None, ''),
             'style': (None, 'no_style'),
             'color': (None, ''),
@@ -106,7 +106,8 @@ class ImageGenerator:
                             # Save directly to R2 and get URL
                             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                             filename = f"image_{segment_id}_{timestamp}"
-                            image_r2_url = self.storage.save_image(image_bytes, filename, "images")
+                            # Use buffered writing when saving to R2
+                            image_r2_url = self.storage.save_image(image_bytes, filename, "images", buffering=8192)
                             
                             if image_r2_url:
                                 print(f"Successfully generated and uploaded image for {segment_id}: {image_r2_url}")
