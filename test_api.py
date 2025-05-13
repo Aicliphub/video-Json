@@ -2,7 +2,7 @@ import requests
 import time
 import json
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "https://localhost:8000"
 
 def test_video_generation():
     # Test POST /generate

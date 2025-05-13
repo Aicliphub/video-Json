@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, status, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, constr
-from typing import Dict, Any
+from pydantic import BaseModel, Field
+from typing import Dict, Any, Annotated
 import uuid
 import asyncio
 import json
@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class GenerateRequest(BaseModel):
-    input_prompt: constr(min_length=10, max_length=500)
+    input_prompt: Annotated[str, Field(min_length=10, max_length=500)]
 
 app = FastAPI(
     title="Video Generation API",

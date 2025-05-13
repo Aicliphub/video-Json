@@ -91,9 +91,7 @@ class Mastermind:
             # Add Gemini config/keys here if needed later
         )
         self.image_generator = ImageGenerator(
-            storage_manager=self.storage_manager,
-            api_key=self.config.freeflux_api_key,
-            image_generator_config=self.config.image_generator_config
+            storage_manager=self.storage_manager
         )
         self.json_builder = JsonBuilder(self.storage_manager)
         

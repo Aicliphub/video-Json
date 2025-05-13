@@ -9,33 +9,27 @@ from src.utils.storage import StorageManager
 from src.depth_map_generator import DepthMapGenerator # Added import
 
 class ImageGenerator:
-    def __init__(self, 
-                 storage_manager: StorageManager, 
-                 api_key: str, 
-                 image_generator_config: Dict[str, str]):
+    def __init__(self, storage_manager: StorageManager):
         """
-        Initialize the Image Generator.
+        Initialize the Image Generator with hardcoded settings.
         
         Args:
             storage_manager: Storage manager instance.
-            api_key: API key for the image generation service (FreeFlux).
-            image_generator_config: Dictionary with 'endpoint' and 'model'.
         """
         self.storage = storage_manager
-        self.api_key = api_key
-        self.config = image_generator_config
-        self.endpoint = self.config.get("endpoint")
-        self.model = self.config.get("model", "flux_1_schnell") # Default if not in config
+        self.api_key = "084bf5ff-cd3b-4c09-abaa-d2334322f562"  # Using key from your .env; REPLACE IF THIS IS NOT YOUR VALID KEY
+        self.endpoint = "https://api.freeflux.ai/v1/images/generate"
+        self.model = "flux_1_schnell"
         
-        if not self.api_key:
-            raise ValueError("FreeFlux API key is required for ImageGenerator.")
-        if not self.endpoint:
-             raise ValueError("FreeFlux endpoint is required for ImageGenerator.")
-             
+        # It's good practice to check if the key looks like a placeholder or a known default,
+        # but for now, we'll assume the user intends to use this key or will replace it.
+        # Consider adding a more robust check or warning if this key is known to be non-functional.
+        print(f"ImageGenerator using API Key: {self.api_key}")
+
         self.headers = {
             'accept': 'application/json',
-            'authorization': f'Bearer {self.api_key}', # Use passed API key
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36' # Keep user-agent
+            'authorization': f'Bearer {self.api_key}',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
         }
         self.max_retries = 3
         self.retry_delay = 2
@@ -92,15 +86,23 @@ class ImageGenerator:
                         else: # Should not happen if save_image doesn't raise error and returns None
                              print(f"Image R2 URL is None for {segment_id} even after successful save_image call. Skipping depth map.")
                              return {"image_url": None, "depth_map_url": None} # Or handle as error
+                else:
+                    print(f"Attempt {attempt+1} failed to generate image for {segment_id}. Status: {response.status_code}, Response: {response.text}")
+            
+            except requests.exceptions.RequestException as e: # More specific exception for network errors
+                print(f"RequestException on attempt {attempt+1} for {segment_id}: {str(e)}")
+            except Exception as e: # General exception
+                print(f"Unexpected error on attempt {attempt+1} for {segment_id}: {str(e)}")
 
-                print(f"Attempt {attempt+1} failed to generate image for {segment_id}, retrying...")
+            # Common retry logic
+            if attempt < self.max_retries - 1:
+                print(f"Retrying image generation for {segment_id} (attempt {attempt+2}/{self.max_retries})...")
                 time.sleep(self.retry_delay)
-            except Exception as e:
-                print(f"Error generating image for {segment_id}: {str(e)}")
-                if attempt < self.max_retries - 1:
-                    time.sleep(self.retry_delay)
+            else:
+                print(f"Failed to generate image for {segment_id} after {self.max_retries} attempts.")
         
-        print(f"Failed to generate image for {segment_id} after multiple attempts.") # More specific error
+        # This print statement might be redundant if the one in the loop's else branch covers all failures.
+        # print(f"Failed to generate image for {segment_id} after multiple attempts.") 
         return {"image_url": None, "depth_map_url": None} # Return None for both if image generation fails
 
     def generate_batch(self, prompts: Dict[str, str], batch_size: int = 20) -> Dict[str, Dict[str, Optional[str]]]:
